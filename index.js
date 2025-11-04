@@ -1,30 +1,33 @@
 import express from "express";
+import cors from "cors";
 import { createClient } from "@supabase/supabase-js";
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Replit fournit un PORT via process.env.PORT
-const PORT = process.env.PORT || 5000;
+// autoriser tout le monde (pour tester). Après on pourra mettre ton domaine Shopify
+app.use(
+  cors({
+    origin: "*"
+  })
+);
 
-// connexion à Supabase
 const supabase = createClient(
   "https://rnjmuueteihgnhpmnehn.supabase.co",
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// route test
 app.get("/", (req, res) => {
-  res.json({ status: "ok", message: "Kolors API on Replit" });
+  res.json({ status: "ok", message: "Kolors API on Render" });
 });
 
-// route principale
 app.get("/recommend", async (req, res) => {
   const { colors, style, budget } = req.query;
 
   if (!colors || !budget) {
-    return res.status(400).json({
-      error: "missing parameters (colors, budget)",
-    });
+    return res
+      .status(400)
+      .json({ error: "missing parameters (colors, budget)" });
   }
 
   const colorsStr = Array.isArray(colors) ? colors.join(",") : colors;
@@ -38,7 +41,7 @@ app.get("/recommend", async (req, res) => {
 
   if (error) {
     console.error(error);
-    return res.status(500).json({ error: "supabase error" });
+    return res.status(500).json({ error: error.message });
   }
 
   const scored = (products || []).map((p) => {
@@ -63,10 +66,10 @@ app.get("/recommend", async (req, res) => {
   });
 
   const top = scored.sort((a, b) => b.score - a.score).slice(0, 5);
-  return res.json(top);
+  res.json(top);
 });
 
-// démarrer le serveur
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("✅ Kolors API running on Replit, port", PORT);
+app.listen(PORT, () => {
+  console.log("✅ Kolors API running on Render with CORS");
 });
+
